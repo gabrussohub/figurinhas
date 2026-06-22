@@ -1,0 +1,15 @@
+{
+  "name": "Figurinhas Copa 2026",
+  "short_name": "Figurinhas 26",
+  "description": "Controle suas figurinhas do álbum da Copa 2026, marque repetidas e organize trocas.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1411",
+  "theme_color": "#0b3d2e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
