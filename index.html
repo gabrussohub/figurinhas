@@ -125,6 +125,49 @@
   input{font-family:inherit}
   .filterbar{display:flex; gap:8px; margin-bottom:12px}
   .filterbar input{flex:1; background:var(--card); border:1px solid var(--line); color:var(--txt); border-radius:10px; padding:10px 12px; font-size:14px}
+
+  /* ---- Grade do time (tela cheia) ---- */
+  .team-view{position:fixed; inset:0; z-index:55; background:linear-gradient(180deg,#0e1c16,var(--bg)); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .2s ease; visibility:hidden}
+  .team-view.show{transform:translateX(0); visibility:visible}
+  .tv-head{display:flex; align-items:center; gap:10px; padding:calc(8px + env(safe-area-inset-top)) 12px 10px; background:linear-gradient(180deg,var(--accent),#0a2c22); border-bottom:1px solid var(--line); border-left:5px solid var(--line)}
+  .tv-back{background:rgba(255,255,255,.1); border:none; color:#fff; width:40px; height:40px; border-radius:11px; font-size:26px; line-height:1; flex:0 0 auto; font-weight:700}
+  .tv-flag{font-size:30px; line-height:1; flex:0 0 auto; min-width:34px; text-align:center}
+  .tv-flag.code{font-size:13px; font-weight:800; color:var(--txt)}
+  .tv-title{flex:1; min-width:0}
+  .tv-title b{font-size:18px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tv-title small{font-size:11px; color:var(--muted)}
+  .tv-prog{flex:0 0 auto; text-align:right; width:74px}
+  .tv-prog b{font-size:14px; display:block; margin-bottom:4px}
+  .tv-prog .pbar{height:6px; background:#0a221a; border-radius:99px; overflow:hidden; border:1px solid var(--line)}
+  .tv-prog .pbar>span{display:block; height:100%; width:0%}
+
+  .tv-grid{flex:1; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; padding:12px; align-content:start; overflow:auto}
+  .tile{position:relative; aspect-ratio:1/1; border-radius:12px; border:1.5px solid var(--line); background:#0c1c16; color:var(--muted); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:19px; cursor:pointer; user-select:none}
+  .tile.t1{background:var(--green-d); border-color:var(--green); color:#fff}
+  .tile.t2{background:#0e4f86; border-color:var(--blue); color:#fff}
+  .tile.sel{outline:3px solid var(--gold); outline-offset:1px}
+  .tile.lbl{font-size:12px}
+  .tile .b{position:absolute; top:-6px; right:-6px; background:var(--blue); color:#fff; font-size:10px; font-weight:800; min-width:18px; height:18px; line-height:18px; border-radius:99px; border:2px solid var(--bg); padding:0 3px}
+  .tile .ic{position:absolute; bottom:3px; font-size:10px; opacity:.85}
+
+  .tv-legend{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:6px 14px; font-size:11px; color:var(--muted); border-top:1px solid var(--line)}
+  .tv-legend span{display:flex; align-items:center; gap:5px}
+  .tv-legend .lg{width:12px; height:12px; border-radius:4px; border:1.5px solid var(--line); display:inline-block}
+  .lg1{background:var(--green-d); border-color:var(--green)}
+  .lg2{background:#0e4f86; border-color:var(--blue)}
+  .lg-hint{flex:1 1 100%; opacity:.7; font-size:10px}
+
+  .tv-detail{background:var(--bg2); border-top:1px solid var(--line); padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
+  .tv-d-empty{text-align:center; color:var(--muted); font-size:13px; padding:8px}
+  .tv-d-card{display:flex; align-items:center; gap:12px}
+  .tv-d-num{width:46px; height:46px; border-radius:11px; background:var(--card2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; flex:0 0 auto}
+  .tv-d-info{flex:1; min-width:0}
+  .tv-d-info b{font-size:16px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tv-d-info small{font-size:11px; color:var(--muted)}
+  .tv-d-info input{width:100%; background:#0a221a; border:1px dashed var(--blue); color:var(--txt); border-radius:8px; padding:6px 8px; font-size:15px}
+  .tv-edit{background:none; border:none; font-size:18px; flex:0 0 auto; padding:6px}
+  .step.big button{width:42px; height:42px; font-size:22px}
+  .step.big .q{min-width:38px; height:42px; line-height:42px; font-size:17px}
 </style>
 </head>
 <body>
@@ -161,9 +204,8 @@
   <!-- ÁLBUM -->
   <section class="tab" id="tab-album">
     <div class="filterbar">
-      <input id="search" placeholder="🔎 Buscar por código, jogador ou seleção..." oninput="renderAlbum()" />
+      <input id="search" placeholder="🔎 Buscar seleção, jogador, código ou página..." oninput="renderAlbum()" />
     </div>
-    <label class="editToggle"><span>Editar nomes</span><input type="checkbox" id="editMode" onchange="renderAlbum()"></label>
     <div id="albumList"></div>
   </section>
 
@@ -210,24 +252,58 @@
 </div>
 <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)" />
 
+<!-- Grade do time (tela cheia: todas as 20 figurinhas de uma vez) -->
+<div class="team-view" id="teamView">
+  <div class="tv-head">
+    <button class="tv-back" onclick="closeTeam()" aria-label="Voltar">‹</button>
+    <div class="tv-flag" id="tvFlag"></div>
+    <div class="tv-title"><b id="tvName"></b><small id="tvMeta"></small></div>
+    <div class="tv-prog"><b id="tvProg">0/20</b><div class="pbar"><span id="tvBar"></span></div></div>
+  </div>
+  <div class="tv-grid" id="tvGrid"></div>
+  <div class="tv-legend">
+    <span><i class="lg lg0"></i>Falta</span>
+    <span><i class="lg lg1"></i>Tenho</span>
+    <span><i class="lg lg2"></i>Repetida</span>
+    <span class="lg-hint">Toque pra marcar · use − / + pras repetidas</span>
+  </div>
+  <div class="tv-detail" id="tvDetail">
+    <div class="tv-d-empty" id="tvDempty">👆 Toque numa figurinha pra ver o jogador</div>
+    <div class="tv-d-card" id="tvDcard" style="display:none">
+      <div class="tv-d-num" id="tvDnum">5</div>
+      <div class="tv-d-info">
+        <b id="tvDname">Jogador</b>
+        <small id="tvDcode">CODE</small>
+      </div>
+      <button class="tv-edit" id="tvEdit" onclick="editSelName()" aria-label="Editar nome">✏️</button>
+      <div class="step big">
+        <button onclick="adjSel(-1)" aria-label="menos">−</button>
+        <div class="q" id="tvDq">0</div>
+        <button onclick="adjSel(1)" aria-label="mais">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ====================== DADOS DO ÁLBUM ====================== */
-// [grupo, código Panini, nome da seleção, código ISO p/ bandeira]
+// Ordem e numeração de página conforme o álbum físico (foto enviada).
+// [grupo, código Panini, nome, código ISO p/ bandeira, página no álbum]
 const TEAMS = [
-  ['A','CZE','Rep. Tcheca','CZ'],['A','MEX','México','MX'],['A','RSA','África do Sul','ZA'],['A','KOR','Coreia do Sul','KR'],
-  ['B','BIH','Bósnia e Herz.','BA'],['B','CAN','Canadá','CA'],['B','QAT','Catar','QA'],['B','SUI','Suíça','CH'],
-  ['C','BRA','Brasil','BR'],['C','HAI','Haiti','HT'],['C','MAR','Marrocos','MA'],['C','SCO','Escócia','SCT'],
-  ['D','AUS','Austrália','AU'],['D','PAR','Paraguai','PY'],['D','TUR','Turquia','TR'],['D','USA','Estados Unidos','US'],
-  ['E','CUW','Curaçao','CW'],['E','ECU','Equador','EC'],['E','GER','Alemanha','DE'],['E','CIV','Costa do Marfim','CI'],
-  ['F','JPN','Japão','JP'],['F','NED','Holanda','NL'],['F','SWE','Suécia','SE'],['F','TUN','Tunísia','TN'],
-  ['G','BEL','Bélgica','BE'],['G','EGY','Egito','EG'],['G','IRN','Irã','IR'],['G','NZL','Nova Zelândia','NZ'],
-  ['H','CPV','Cabo Verde','CV'],['H','KSA','Arábia Saudita','SA'],['H','ESP','Espanha','ES'],['H','URU','Uruguai','UY'],
-  ['I','FRA','França','FR'],['I','IRQ','Iraque','IQ'],['I','NOR','Noruega','NO'],['I','SEN','Senegal','SN'],
-  ['J','ALG','Argélia','DZ'],['J','ARG','Argentina','AR'],['J','AUT','Áustria','AT'],['J','JOR','Jordânia','JO'],
-  ['K','COL','Colômbia','CO'],['K','COD','Rep. Dem. Congo','CD'],['K','POR','Portugal','PT'],['K','UZB','Uzbequistão','UZ'],
-  ['L','CRO','Croácia','HR'],['L','ENG','Inglaterra','ENG'],['L','GHA','Gana','GH'],['L','PAN','Panamá','PA'],
+  ['A','MEX','México','MX',8],['A','RSA','África do Sul','ZA',10],['A','KOR','Coreia do Sul','KR',12],['A','CZE','Rep. Tcheca','CZ',14],
+  ['B','CAN','Canadá','CA',16],['B','BIH','Bósnia e Herz.','BA',18],['B','QAT','Catar','QA',20],['B','SUI','Suíça','CH',22],
+  ['C','BRA','Brasil','BR',24],['C','MAR','Marrocos','MA',26],['C','HAI','Haiti','HT',28],['C','SCO','Escócia','SCT',30],
+  ['D','USA','Estados Unidos','US',32],['D','PAR','Paraguai','PY',34],['D','AUS','Austrália','AU',36],['D','TUR','Turquia','TR',38],
+  ['E','GER','Alemanha','DE',40],['E','CUW','Curaçao','CW',42],['E','CIV','Costa do Marfim','CI',44],['E','ECU','Equador','EC',46],
+  ['F','NED','Holanda','NL',48],['F','JPN','Japão','JP',50],['F','SWE','Suécia','SE',52],['F','TUN','Tunísia','TN',54],
+  ['G','BEL','Bélgica','BE',58],['G','EGY','Egito','EG',60],['G','IRN','Irã','IR',62],['G','NZL','Nova Zelândia','NZ',64],
+  ['H','ESP','Espanha','ES',66],['H','CPV','Cabo Verde','CV',68],['H','KSA','Arábia Saudita','SA',70],['H','URU','Uruguai','UY',72],
+  ['I','FRA','França','FR',74],['I','SEN','Senegal','SN',76],['I','IRQ','Iraque','IQ',78],['I','NOR','Noruega','NO',80],
+  ['J','ARG','Argentina','AR',82],['J','ALG','Argélia','DZ',84],['J','AUT','Áustria','AT',86],['J','JOR','Jordânia','JO',88],
+  ['K','POR','Portugal','PT',90],['K','COD','Rep. Dem. Congo','CD',92],['K','UZB','Uzbequistão','UZ',94],['K','COL','Colômbia','CO',96],
+  ['L','ENG','Inglaterra','ENG',98],['L','CRO','Croácia','HR',100],['L','GHA','Gana','GH',102],['L','PAN','Panamá','PA',104],
 ];
 
 // Bandeira emoji a partir do código ISO (Android renderiza; no PC vira as 2 letras)
@@ -369,8 +445,8 @@ STICKERS.forEach(s=>BYCODE[s.code.toUpperCase()]=s);
 const TOTAL = STICKERS.length; // 980
 
 // Ordem das seções para listas
-const SECTIONS = [{code:'SPECIAL', name:'Especiais / Torneio', grp:'★', flag:'🏆', color:grpColor('★')}]
-  .concat(TEAMS.map(([grp,code,name,cc])=>({code, name, grp, cc, flag:flagEmoji(cc), color:grpColor(grp)})));
+const SECTIONS = [{code:'SPECIAL', name:'Especiais / Torneio', grp:'★', flag:'🏆', color:grpColor('★'), page:null}]
+  .concat(TEAMS.map(([grp,code,name,cc,page])=>({code, name, grp, cc, page, flag:flagEmoji(cc), color:grpColor(grp)})));
 const SEC_BY_CODE = {};
 SECTIONS.forEach(s=>SEC_BY_CODE[s.code]=s);
 function secFlag(code){ return (SEC_BY_CODE[code]||{}).flag || '★'; }
@@ -420,110 +496,151 @@ function renderInicio(){
   document.getElementById('s-pct').textContent=t.pct+'%';
   refreshTop();
   const box=document.getElementById('sectionList'); box.innerHTML='';
-  SECTIONS.forEach(sec=>{
-    const list=STICKERS.filter(s=>s.sec===sec.code);
-    const have=list.filter(s=>cnt(s.code)>=1).length;
-    const pct=Math.round(have/list.length*100);
-    const div=document.createElement('div'); div.className='secrow';
-    div.style.borderLeftColor=sec.color;
-    div.onclick=()=>{ go('album'); setTimeout(()=>scrollToSection(sec.code),60); };
-    const sub = sec.grp==='★' ? 'Especiais' : ('Grupo '+sec.grp+' · '+sec.code);
-    const f=fdisp(sec);
-    div.innerHTML=`
-      <div class="flag${f.code?' code':''}">${f.t}</div>
-      <div class="nm"><b>${sec.name}</b><small><i class="dot" style="background:${sec.color}"></i>${sub}</small></div>
-      <div class="mini"><div class="pbar"><span style="width:${pct}%; background:${sec.color}"></span></div></div>
-      <div class="cnt">${have}/${list.length}</div>`;
-    box.appendChild(div);
-  });
+  SECTIONS.forEach(sec=>box.appendChild(secRowNode(sec)));
 }
 
-/* ====================== ÁLBUM ====================== */
-function scrollToSection(code){
-  const el=document.getElementById('sec-'+code);
-  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+/* ====== Linha de seleção (reutilizada em Início e Álbum) — abre a grade ====== */
+function secRowNode(sec){
+  const list=STICKERS.filter(s=>s.sec===sec.code);
+  const have=list.filter(s=>cnt(s.code)>=1).length;
+  const pct=Math.round(have/list.length*100);
+  const div=document.createElement('div'); div.className='secrow';
+  div.style.borderLeftColor=sec.color;
+  div.onclick=()=>openTeam(sec.code);
+  const sub = sec.grp==='★' ? 'Especiais' : ('Pág. '+sec.page+' · Grupo '+sec.grp+' · '+sec.code);
+  const f=fdisp(sec);
+  div.innerHTML=`
+    <div class="flag${f.code?' code':''}">${f.t}</div>
+    <div class="nm"><b>${sec.name}</b><small><i class="dot" style="background:${sec.color}"></i>${sub}</small></div>
+    <div class="mini"><div class="pbar"><span style="width:${pct}%; background:${sec.color}"></span></div></div>
+    <div class="cnt">${have}/${list.length}</div>`;
+  return div;
+}
+
+/* ====================== ÁLBUM (lista de seleções) ====================== */
+function matchSection(sec, q){
+  if(sec.name.toLowerCase().includes(q)) return true;
+  if(sec.code.toLowerCase().includes(q)) return true;
+  if(sec.page && String(sec.page)===q) return true;
+  return STICKERS.some(s=>s.sec===sec.code && nameOf(s).toLowerCase().includes(q)); // por jogador
 }
 function renderAlbum(){
   refreshTop();
   const q=(document.getElementById('search').value||'').trim().toLowerCase();
-  const edit=document.getElementById('editMode').checked;
   const box=document.getElementById('albumList'); box.innerHTML='';
   let lastGrp=null, shown=0;
   SECTIONS.forEach(sec=>{
-    let list=STICKERS.filter(s=>s.sec===sec.code);
-    if(q){
-      list=list.filter(s=>
-        s.code.toLowerCase().includes(q) ||
-        nameOf(s).toLowerCase().includes(q) ||
-        sec.name.toLowerCase().includes(q));
-    }
-    if(!list.length) return;
+    if(q && !matchSection(sec,q)) return;
     if(!q && sec.grp!=='★' && sec.grp!==lastGrp){
       lastGrp=sec.grp;
       const g=document.createElement('div'); g.className='grp'; g.style.color=sec.color;
       g.innerHTML=`<i class="dot" style="background:${sec.color}"></i>GRUPO ${sec.grp}`;
       box.appendChild(g);
     }
-    const have=STICKERS.filter(s=>s.sec===sec.code && cnt(s.code)>=1).length;
-    const total=STICKERS.filter(s=>s.sec===sec.code).length;
-    const card=document.createElement('div'); card.className='card-list'; card.id='sec-'+sec.code;
-    card.style.borderLeftColor=sec.color;
-    const head=document.createElement('div'); head.className='ch';
-    const fh=fdisp(sec);
-    head.innerHTML=`<span class="flag${fh.code?' code':''}">${fh.t}</span> ${sec.name} <small>${have}/${total}</small>`;
-    card.appendChild(head);
-    list.forEach(s=>{ card.appendChild(rowFor(s,edit)); shown++; });
-    box.appendChild(card);
+    box.appendChild(secRowNode(sec)); shown++;
   });
   if(!shown){ box.innerHTML='<div class="empty"><div class="big">🔎</div>Nada encontrado.</div>'; }
-}
-function rowFor(s, edit){
-  const c=cnt(s.code);
-  const row=document.createElement('div');
-  row.className='row'+(c>=2?' dup':(c>=1?' have':''));
-  const dupTag = c>=2 ? `<span class="dupTag">+${c-1} repetida${c-1>1?'s':''}</span>` : '';
-  if(edit){
-    row.innerHTML=`<div class="num">${numLabel(s)}</div>`;
-    const inp=document.createElement('input'); inp.className='name-edit'; inp.value=nameOf(s);
-    inp.onchange=()=>{ const v=inp.value.trim(); if(v && v!==s.defName) names[s.code]=v; else delete names[s.code]; save(); };
-    row.appendChild(inp);
-    return row;
-  }
-  row.innerHTML=`
-    <div class="num">${numLabel(s)}</div>
-    <div class="info"><b></b><small>${s.code}</small></div>
-    <div class="step">
-      <button aria-label="menos">−</button>
-      <div class="q"></div>
-      <button aria-label="mais">+</button>
-    </div>`;
-  const bEl=row.querySelector('.info b'), qEl=row.querySelector('.q');
-  function paint(){
-    const c=cnt(s.code);
-    row.className='row'+(c>=2?' dup':(c>=1?' have':''));
-    bEl.innerHTML = nameOf(s) + (c>=2 ? ` <span class="dupTag">+${c-1} repetida${c-1>1?'s':''}</span>` : '');
-    qEl.textContent=c;
-    updateSecHead(s.sec);
-    refreshTop();
-  }
-  row.querySelector('.info').onclick=()=>{ setCount(s.code, cnt(s.code)>=1?0:1); paint(); };
-  row.querySelectorAll('.step button')[0].onclick=()=>{ setCount(s.code, cnt(s.code)-1); paint(); };
-  row.querySelectorAll('.step button')[1].onclick=()=>{ setCount(s.code, cnt(s.code)+1); paint(); };
-  paint();
-  return row;
 }
 function numLabel(s){
   if(s.sec==='SPECIAL') return s.code;
   return s.code.slice(s.sec.length); // só o número dentro da seleção
 }
-// Atualiza o "tenho/total" no cabeçalho da seção sem re-renderizar tudo
-function updateSecHead(secCode){
-  const card=document.getElementById('sec-'+secCode);
-  if(!card) return;
-  const small=card.querySelector('.ch small'); if(!small) return;
-  const list=STICKERS.filter(s=>s.sec===secCode);
+
+/* ====================== GRADE DO TIME (todas as figurinhas numa tela) ====================== */
+let tvCode=null, tvSel=null;
+function openTeam(secCode){
+  tvCode=secCode; tvSel=null;
+  renderTeam();
+  document.getElementById('teamView').classList.add('show');
+  if(!(history.state && history.state.tv)) history.pushState({tv:1}, '');
+}
+function closeTeam(){ if(history.state && history.state.tv) history.back(); else hideTeam(); }
+function hideTeam(){
+  document.getElementById('teamView').classList.remove('show');
+  tvCode=null; tvSel=null;
+  refreshActiveTab();
+}
+window.addEventListener('popstate', ()=>{
+  if(document.getElementById('teamView').classList.contains('show')) hideTeam();
+});
+function refreshActiveTab(){
+  const active=document.querySelector('.tab.active'); if(!active) return;
+  if(active.id==='tab-inicio') renderInicio();
+  if(active.id==='tab-album') renderAlbum();
+}
+function teamStickers(){ return STICKERS.filter(s=>s.sec===tvCode); }
+
+function renderTeam(){
+  const sec=SEC_BY_CODE[tvCode]; if(!sec) return;
+  const f=fdisp(sec);
+  const fl=document.getElementById('tvFlag'); fl.className='tv-flag'+(f.code?' code':''); fl.textContent=f.t;
+  document.getElementById('tvName').textContent=sec.name;
+  document.getElementById('tvMeta').textContent = sec.grp==='★' ? 'Especiais / Torneio' : ('Grupo '+sec.grp+' · Pág. '+sec.page);
+  document.querySelector('.tv-head').style.borderLeftColor=sec.color;
+  const grid=document.getElementById('tvGrid'); grid.innerHTML='';
+  teamStickers().forEach(s=>{
+    const t=document.createElement('div'); t.className='tile'; t.dataset.code=s.code;
+    const lbl=numLabel(s); if(lbl.length>=3) t.classList.add('lbl');
+    t.innerHTML=`<span class="t">${lbl}</span>`;
+    t.onclick=()=>tapTile(s.code);
+    grid.appendChild(t);
+    paintTile(s.code);
+  });
+  updateTeamProg();
+  paintDetail();
+}
+function tileEl(code){ return document.querySelector('.tile[data-code="'+(window.CSS&&CSS.escape?CSS.escape(code):code)+'"]'); }
+function paintTile(code){
+  const el=tileEl(code); if(!el) return;
+  const c=cnt(code);
+  el.classList.toggle('t1', c===1);
+  el.classList.toggle('t2', c>=2);
+  el.classList.toggle('sel', code===tvSel);
+  let b=el.querySelector('.b');
+  if(c>=2){ if(!b){ b=document.createElement('span'); b.className='b'; el.appendChild(b);} b.textContent='×'+c; }
+  else if(b){ b.remove(); }
+}
+function tapTile(code){
+  if(cnt(code)===0) setCount(code,1);   // 1º toque marca como "tenho" (− no detalhe pra desmarcar)
+  document.querySelectorAll('.tile.sel').forEach(e=>e.classList.remove('sel'));
+  tvSel=code;
+  paintTile(code);
+  updateTeamProg(); paintDetail(); refreshTop();
+}
+function adjSel(d){
+  if(!tvSel) return;
+  setCount(tvSel, cnt(tvSel)+d);
+  paintTile(tvSel); updateTeamProg(); paintDetail(); refreshTop();
+}
+function updateTeamProg(){
+  const list=teamStickers();
   const have=list.filter(s=>cnt(s.code)>=1).length;
-  small.textContent=have+'/'+list.length;
+  const pct=Math.round(have/list.length*100);
+  document.getElementById('tvProg').textContent=have+'/'+list.length;
+  const bar=document.getElementById('tvBar'); bar.style.width=pct+'%'; bar.style.background=(SEC_BY_CODE[tvCode]||{}).color;
+}
+function paintDetail(){
+  const empty=document.getElementById('tvDempty'), card=document.getElementById('tvDcard');
+  if(!tvSel){ empty.style.display=''; card.style.display='none'; return; }
+  empty.style.display='none'; card.style.display='';
+  const s=BYCODE[tvSel.toUpperCase()];
+  document.getElementById('tvDnum').textContent=numLabel(s);
+  // restaura o layout do nome (caso estivesse em edição)
+  const info=document.querySelector('.tv-d-info');
+  info.innerHTML=`<b id="tvDname"></b><small id="tvDcode"></small>`;
+  document.getElementById('tvDname').textContent=nameOf(s);
+  document.getElementById('tvDcode').textContent=s.code;
+  document.getElementById('tvDq').textContent=cnt(tvSel);
+}
+function editSelName(){
+  if(!tvSel) return;
+  const s=BYCODE[tvSel.toUpperCase()];
+  const info=document.querySelector('.tv-d-info');
+  const cur=(nameOf(s)||'').replace(/"/g,'&quot;');
+  info.innerHTML=`<input id="tvNameInp" value="${cur}" />`;
+  const inp=document.getElementById('tvNameInp'); inp.focus(); inp.select();
+  inp.onblur=()=>{ const v=inp.value.trim(); if(v && v!==s.defName) names[s.code]=v; else delete names[s.code]; save(); paintDetail(); };
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); });
 }
 
 /* ====================== REPETIDAS ====================== */
